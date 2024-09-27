@@ -1,5 +1,5 @@
 import express from'express'
-import { getJokeHandler } from './Handlers/chuckNorrisHandler';
+import { getJokeHandler } from './chuckNorrisHandler';
 
 const app = express()
 const port = 3000

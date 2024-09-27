@@ -1,6 +1,6 @@
 // jokeHandler.js
-import { fetchRandomJoke } from '../Connectors/chuckNorrisConnector.js';
-import { formatJokeResponse } from '../Helpers/chuckNorrisHelper.js';
+import { fetchRandomJoke } from './chuckNorrisConnector.js';
+import { formatJokeResponse } from './chuckNorrisHelper.js';
 
 // Handler: Get joke and send response
 export const getJokeHandler = async (req, res) => {
