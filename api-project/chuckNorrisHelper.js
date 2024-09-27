@@ -10,12 +10,13 @@ export const formatJokeResponse = (joke) => {
   
  
   export const formatRandomResponse = (joke) => {
-    console.log(joke.catergories)
+   
     return {
       id: joke.id,
       joke: joke.value,
       url: joke.url,
-      category:joke.catergories
+      created:joke.created_at,
+      category: joke.categories
     }
     
   }
