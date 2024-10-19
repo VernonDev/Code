@@ -7,6 +7,7 @@ export const getDisneyHandler = async (req,res) =>{
         const character = await fetchCharacter();
         const formattedCharacter = formatDisneyCharacter(character);
         res.status(200).json(formattedCharacter);
+        console.log(formattedCharacter)
 
     } catch (error){
         res.status(500).json({ message: 'Failed to fetch characher', error });

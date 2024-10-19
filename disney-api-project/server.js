@@ -9,7 +9,7 @@ app.get('/home',(req,res)=>{
     res.send('Hello')
 })
 
-app.get('character', getDisneyHandler);
+app.get('/character', getDisneyHandler);
 
 
 
