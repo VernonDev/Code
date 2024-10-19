@@ -19,7 +19,7 @@ export const formatDisneyCharacter = (apiResponse) => {
       previousPage: info.previousPage,
       nextPage: info.nextPage,
     };
-  
+    
     // Format each character's data
     const formattedCharacters = data.map(character => {
       return {
