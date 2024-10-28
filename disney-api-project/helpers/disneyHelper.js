@@ -1,12 +1,5 @@
-/*export const formatDisneyCharacter = (character) =>{
-    return {
-        id: character._id,
-        films: character.films | [],
-        source: character.sourceUrl
 
-    }
-}
-*/
+
 
 // Helper function to format the Disney API response
 export const formatDisneyCharacter = (apiResponse) => {
