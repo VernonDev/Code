@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message Logger Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        padding: 20px;
+      }
+      .message-row {
+        cursor: pointer;
+      }
+      .message-detail {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mb-4">Message Logger Dashboard</h1>
+
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Send New Message</div>
+            <div class="card-body">
+              <form id="messageForm">
+                <div class="mb-3">
+                  <label for="messageKey" class="form-label">Message Key</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="messageKey"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="messageContent" class="form-label"
+                    >Message Content</label
+                  >
+                  <textarea
+                    class="form-control"
+                    id="messageContent"
+                    rows="3"
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  Send Message
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Filters</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="topicFilter" class="form-label">Topic</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="topicFilter"
+                  value="messages"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="limitFilter" class="form-label">Limit</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="limitFilter"
+                  value="50"
+                />
+              </div>
+              <button id="refreshButton" class="btn btn-secondary">
+                Refresh Messages
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Message History</div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Topic</th>
+                <th>Key</th>
+                <th>Partition</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="messagesTable">
+              <!-- Message rows will be added here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal fade" id="messageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Message Details</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-3"><strong>ID:</strong></div>
+                <div class="col-md-9" id="modalId"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3"><strong>Topic:</strong></div>
+                <div class="col-md-9" id="modalTopic"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3"><strong>Key:</strong></div>
+                <div class="col-md-9" id="modalKey"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3"><strong>Partition:</strong></div>
+                <div class="col-md-9" id="modalPartition"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3"><strong>Offset:</strong></div>
+                <div class="col-md-9" id="modalOffset"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3"><strong>Timestamp:</strong></div>
+                <div class="col-md-9" id="modalTimestamp"></div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <strong>Message Content:</strong>
+                  <div class="card mt-2">
+                    <div class="card-body message-detail" id="modalValue"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Initialize modal
+      const messageModal = new bootstrap.Modal(
+        document.getElementById("messageModal")
+      );
+
+      // Load messages on page load
+      document.addEventListener("DOMContentLoaded", loadMessages);
+
+      // Add event listeners
+      document
+        .getElementById("refreshButton")
+        .addEventListener("click", loadMessages);
+      document
+        .getElementById("messageForm")
+        .addEventListener("submit", sendMessage);
+
+      // Load messages from API
+      function loadMessages() {
+        const topic = document.getElementById("topicFilter").value;
+        const limit = document.getElementById("limitFilter").value;
+
+        let url = "/messages?limit=" + limit;
+        if (topic) {
+          url += "&topic=" + encodeURIComponent(topic);
+        }
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              renderMessages(data.data);
+            } else {
+              alert("Error loading messages: " + data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Failed to load messages");
+          });
+      }
+
+      // Send a new message
+      function sendMessage(event) {
+        event.preventDefault();
+
+        const key = document.getElementById("messageKey").value;
+        const message = document.getElementById("messageContent").value;
+
+        if (!message) {
+          alert("Message content is required");
+          return;
+        }
+
+        const payload = { message };
+        if (key) {
+          payload.key = key;
+        }
+
+        fetch("/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert("Message sent successfully!");
+              document.getElementById("messageForm").reset();
+              // Wait a bit for the consumer to process the message
+              setTimeout(loadMessages, 1000);
+            } else {
+              alert("Error sending message: " + data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Failed to send message");
+          });
+      }
+
+      // Display messages in the table
+      function renderMessages(messages) {
+        const tableBody = document.getElementById("messagesTable");
+        tableBody.innerHTML = "";
+
+        if (messages.length === 0) {
+          const row = document.createElement("tr");
+          row.innerHTML =
+            '<td colspan="5" class="text-center">No messages found</td>';
+          tableBody.appendChild(row);
+          return;
+        }
+
+        messages.forEach((message) => {
+          const row = document.createElement("tr");
+          row.className = "message-row";
+          row.innerHTML = `
+          <td>${message.id}</td>
+          <td>${message.topic}</td>
+          <td>${message.key || "-"}</td>
+          <td>${message.partition}</td>
+          <td>${new Date(message.timestamp).toLocaleString()}</td>
+        `;
+
+          row.addEventListener("click", () => showMessageDetails(message));
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Show message details in modal
+      function showMessageDetails(message) {
+        document.getElementById("modalId").textContent = message.id;
+        document.getElementById("modalTopic").textContent = message.topic;
+        document.getElementById("modalKey").textContent = message.key || "-";
+        document.getElementById("modalPartition").textContent =
+          message.partition;
+        document.getElementById("modalOffset").textContent = message.offset;
+        document.getElementById("modalTimestamp").textContent = new Date(
+          message.timestamp
+        ).toLocaleString();
+
+        let content = message.value;
+        // Try to format as JSON if it is valid JSON
+        try {
+          const parsed = JSON.parse(message.value);
+          content = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+          // Not JSON, display as is
+        }
+
+        document.getElementById("modalValue").textContent = content;
+        messageModal.show();
+      }
+    </script>
+  </body>
+</html>
